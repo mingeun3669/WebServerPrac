@@ -33,14 +33,14 @@ func process(w http.ResponseWriter, r *http.Request) {
 	name, email, pwd := r.FormValue("name"), r.FormValue("email"),
 		r.FormValue("pwd")
 
+	hash := sha256.New()
+	hash.Write([]byte(email))
+	md := hash.Sum(nil)
+	mdStr := hex.EncodeToString(md)
 	fmt.Println(name, email, pwd)
-	_, err := libs.Uuid.Search(uuid, email)
+	_, err := libs.Uuid.Search(uuid, mdStr)
 	if err != nil {
 		// set cookie
-		hash := sha256.New()
-		hash.Write([]byte(email))
-		md := hash.Sum(nil)
-		mdStr := hex.EncodeToString(md)
 		fmt.Println(mdStr)
 		cookie := http.Cookie{
 			Name:     "email",
