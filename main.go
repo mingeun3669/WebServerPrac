@@ -7,7 +7,7 @@ import (
 	"html/template"
 	"net/http"
 
-	libs "github.com/mingeun3669/L34rn_G0/WebServerPrac/Libs"
+	libs "github.com/mingeun3669/WebServerPrac/Libs"
 )
 
 var uuid map[string]string = libs.Uuid{}
@@ -34,13 +34,9 @@ func process(w http.ResponseWriter, r *http.Request) {
 		r.FormValue("pwd")
 
 	fmt.Println(name, email, pwd)
-	num, _ := libs.SendMail((email))
 	_, err := libs.Uuid.Search(uuid, email)
-	fmt.Println(num)
 	if err != nil {
-		t, _ := template.ParseFiles("templates/process.html")
-		t.Execute(w, nil)
-		libs.Uuid.Add(uuid, email, num)
+		// set cookie
 		hash := sha256.New()
 		hash.Write([]byte(email))
 		md := hash.Sum(nil)
@@ -51,28 +47,39 @@ func process(w http.ResponseWriter, r *http.Request) {
 			Value:    mdStr,
 			HttpOnly: true,
 		}
-		w.Header().Set("Set-Cookie", cookie.String())
+		http.SetCookie(w, &cookie)
+
+		num, _ := libs.SendMail((email))
+		t, _ := template.ParseFiles("templates/process.html")
+		t.Execute(w, nil)
+		libs.Uuid.Add(uuid, mdStr, num)
 	} else {
 		fmt.Fprintln(w, "Already Registered")
 	}
 }
-
 func process_verify(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	// vNum, cNum := strconv.Itoa(), r.FormValue("ver")
-	// w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// if vNum == cNum {
-	// 	fmt.Fprintln(w, `Register Success!
-	// 	<a href="/">Please Back to main page.</a>`)
-	// } else {
-	// 	fmt.Fprintln(w, `Register Failed!
-	// 	<a href="/">Please Back to main page.</a>`)
-	// }
+	v, err := r.Cookie("email")
+	vEmail := v.Value
+	vNum, _ := libs.Uuid.Search(uuid, vEmail)
+	fmt.Println(vNum)
+	if err != nil {
+		fmt.Fprintln(w, "Something Error .....")
+	}
+	cNum := r.FormValue("ver")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if vNum == cNum {
+		fmt.Fprintln(w, `Register Success!
+		<a href="/">Please Back to main page.</a>`)
+	} else {
+		fmt.Fprintln(w, `Register Failed!
+		<a href="/">Please Back to main page.</a>`)
+	}
 }
 
 func main() {
 	server := http.Server{
-		Addr: "0.0.0.0:8080",
+		Addr: "0.0.0.0:1234",
 	}
 	http.HandleFunc("/", index)
 	http.HandleFunc("/register", register)
