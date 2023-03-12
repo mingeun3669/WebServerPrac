@@ -77,6 +77,11 @@ func process_verify(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func timeout(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Timed out !")
+
+}
+
 func main() {
 	server := http.Server{
 		Addr: "0.0.0.0:1234",
