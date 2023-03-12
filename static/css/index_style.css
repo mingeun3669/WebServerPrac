@@ -1,0 +1,15 @@
+h1 {
+    font-size: 10vw;
+    text-align: center;
+}
+
+section { 
+    padding-top: 5rem; 
+    display: flex; 
+    justify-content: space-around; 
+}
+
+button {
+    width: 100px;
+    height: 50px;
+}
