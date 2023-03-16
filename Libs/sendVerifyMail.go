@@ -8,6 +8,7 @@ import (
 )
 
 type Uuid map[string]string
+type UC map[string]string
 
 func SendMail(email string) (string, error) {
 	auth := smtp.PlainAuth("", "sdh220312@sdh.hs.kr", "smzqtywdkrocvxui", "smtp.gmail.com")
@@ -52,4 +53,14 @@ func (u Uuid) Search(email string) (string, error) {
 		return num, nil
 	}
 	return "", errors.New("Not Found")
+}
+
+func (u Uuid) Delete(email string) error {
+	_, err := u.Search(email)
+	if err != nil {
+		return errors.New("Something Error")
+	}
+
+	delete(u, email)
+	return nil
 }

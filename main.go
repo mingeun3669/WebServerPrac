@@ -12,6 +12,21 @@ import (
 
 var uuid map[string]string = libs.Uuid{}
 
+/* TODO :
+Implement deleting all cookies
+Implement uuid check
+*/
+
+func deleteCookie(w http.ResponseWriter, name string) {
+	c := http.Cookie{
+		Name:     name,
+		Value:    "",
+		MaxAge:   -1,
+		HttpOnly: true,
+	}
+	http.SetCookie(w, &c)
+}
+
 func index(w http.ResponseWriter, r *http.Request) {
 	t, _ := template.ParseFiles("templates/index.html")
 	t.Execute(w, nil)
@@ -43,7 +58,7 @@ func process(w http.ResponseWriter, r *http.Request) {
 		// set cookie
 		fmt.Println(mdStr)
 		cookie := http.Cookie{
-			Name:     "email",
+			Name:     "___uuid",
 			Value:    mdStr,
 			HttpOnly: true,
 		}
@@ -59,18 +74,20 @@ func process(w http.ResponseWriter, r *http.Request) {
 }
 func process_verify(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	v, err := r.Cookie("email")
+	v, err := r.Cookie("___uuid")
 	vEmail := v.Value
 	vNum, _ := libs.Uuid.Search(uuid, vEmail)
 	fmt.Println(vNum)
 	if err != nil {
 		fmt.Fprintln(w, "Something Error .....")
+		return
 	}
 	cNum := r.FormValue("ver")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if vNum == cNum {
 		fmt.Fprintln(w, `Register Success!
 		<a href="/">Please Back to main page.</a>`)
+
 	} else {
 		fmt.Fprintln(w, `Register Failed!
 		<a href="/">Please Back to main page.</a>`)
@@ -78,8 +95,36 @@ func process_verify(w http.ResponseWriter, r *http.Request) {
 }
 
 func timeout(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Timed out !")
+	v, err1 := r.Cookie("___uuid")
+	cs := r.Cookies()
 
+	if err1 != nil {
+		for _, c1 := range cs {
+			deleteCookie(w, c1.Name)
+		}
+		fmt.Fprintln(w, "DO NOT EDIT COOKIE'S NAME, FUCK YOU")
+		return
+	}
+	vv := v.Value // mdStr
+	err := libs.Uuid.Delete(uuid, vv)
+	if err != nil {
+		for _, c1 := range cs {
+			deleteCookie(w, c1.Name)
+		}
+		fmt.Fprintln(w, "What ?! Are you HACKER ?!?!")
+		return
+	}
+
+	// delete cookie
+	c := http.Cookie{
+		Name:     "___uuid",
+		Value:    "",
+		MaxAge:   -1,
+		HttpOnly: true,
+	}
+	http.SetCookie(w, &c)
+
+	fmt.Fprintln(w, "Timed out !")
 }
 
 func main() {
@@ -91,6 +136,7 @@ func main() {
 	http.HandleFunc("/login", login)
 	http.HandleFunc("/process", process)
 	http.HandleFunc("/process_verify", process_verify)
+	http.HandleFunc("/timeout", timeout)
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	server.ListenAndServe()
